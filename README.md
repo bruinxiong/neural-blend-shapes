@@ -32,11 +32,26 @@ We provide a pretrained model that is dedicated for biped characters. Download a
 python demo.py --pose_file=./eval_constant/sequences/greeting.npy --obj_path=./eval_constant/meshes/maynard.obj
 ~~~
 
-The nice greeting animation showed above will be saved in `demo/obj` as obj files. In addition, the generated skeleton will be saved as `demo/skeleton.bvh` and the skinning weight matrix will be saved as `demo/weight.npy`.
+The nice greeting animation showed above will be saved in `demo/obj` as obj files. In addition, the generated skeleton will be saved as `demo/skeleton.bvh` and the skinning weight matrix will be saved as `demo/weight.npy`. If you need the bvh file animated, you may specify `--animated_bvh=1`.
 
 If you are interested in traditional linear blend skinning (LBS) technique result generated with our rig, you can specify `--envelope_only=1` to evaluate our model only with the envelope branch.
 
 We also provide other several meshes and animation sequences. Feel free to try their combinations!
+
+
+### FBX Output (New!)
+
+Now you can choose to output the animation as a single fbx file instead of a sequence of obj files! Simply do following:
+
+~~~bash
+python demo.py --animated_bvh=1 --obj_output=0
+cd blender_scripts
+blender -b -P nbs_fbx_output.py -- --input ../demo --output ../demo/output.fbx
+~~~
+
+Note that you need to install Blender (>=2.80) to generate the fbx file. You may explore more options on the generated fbx file in the source code.
+
+This code is contributed by [@huh8686](https://github.com/huh8686).
 
 ### Test on Customized Meshes
 
@@ -51,6 +66,26 @@ python evaluation.py
 ~~~
 
 
+## Train from Scratch
+
+We provide instructions for retraining our model.
+
+To train the model from scratch, you need to download the training set from [Google Drive](https://drive.google.com/file/d/1RSd6cPYRuzt8RYWcCVL0FFFsL42OeHA7/view?usp=sharing) or [Baidu Disk](https://pan.baidu.com/s/1J-hIVyz19hKZdwKPfS3TtQ) (uqub) and put the extracted folders under `./dataset`.
+
+The training process contains tow stages, each stage corresponding to one branch. To train the first stage, please run
+
+~~~bash
+python train.py --envelope=1 --save_path=[path to save the model] --device=[cpu/cuda:0/cuda:1/...]
+~~~
+
+Note that you may need to reinstall the PyTorch CUDA version since the provided environment only includes a PyTorch CPU version for compatibility consideration. 
+
+For the second stage, it is strongly recommended to use a pre-process to extract the blend shapes basis then start the training for much better efficiency by
+
+~~~bash
+python preprocess_bs.py --save_path=[same path as the first stage] --device=[computing device]
+python train.py --residual=1 --save_path=[same path as the first stage] --device=[computing device] --lr=1e-4
+~~~
 
 ## Blender Visualization
 
@@ -94,13 +129,15 @@ Meanwhile, you can import the generated skeleton (in `demo/skeleton.bvh`) to Ble
 
 ## Acknowledgements
 
+The code in `blender_scripts/nbs_fbx_output.py` is contributed by [@huh8686](https://github.com/huh8686).
+
 The code in `meshcnn` is adapted from [MeshCNN](https://github.com/ranahanocka/MeshCNN) by [@ranahanocka](https://github.com/ranahanocka/).
 
 The code in `models/skeleton.py` is adapted from [deep-motion-editing](https://github.com/DeepMotionEditing/deep-motion-editing) by [@kfiraberman](https://github.com/kfiraberman), [@PeizhuoLi](https://github.com/PeizhuoLi) and [@HalfSummer11](https://github.com/HalfSummer11).
 
 The code in `dataset/smpl_layer` is adapted from [smpl_pytorch](https://github.com/gulvarol/smplpytorch) by [@gulvarol](https://github.com/gulvarol).
 
-Part of the test models are taken from and [SMPL](https://smpl.is.tue.mpg.de/en), [MultiGarmentNetwork](https://github.com/bharat-b7/MultiGarmentNetwork) and [Adobe Mixamo](https://www.mixamo.com).
+Part of the test models are taken from [SMPL](https://smpl.is.tue.mpg.de/en), [MultiGarmentNetwork](https://github.com/bharat-b7/MultiGarmentNetwork) and [Adobe Mixamo](https://www.mixamo.com).
 
 ## Citation
 
@@ -113,14 +150,9 @@ If you use this code for your research, please cite our paper:
   journal = {ACM Transactions on Graphics (TOG)},
   volume = {40},
   number = {4},
-  pages = {1},
+  pages = {130},
   year = {2021},
   publisher = {ACM}
 }
 ~~~
 
-
-
-
-
-Note: This repository is still under construction. We are planning to release the code and dataset for training soon.
